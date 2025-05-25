@@ -1,0 +1,19 @@
+NCurses 사용
+2차원 snake map 구현
+map size minimum(21x21)
+wall n immune wall 구분
+
+==========================
+
+snake 구현
+방향키에 따른 dx dy 계산(조건문)
+
+규칙 #1
+1. head 방향 이동
+2. tail 방향 x -> 진행 반대 방향 GameOver
+3. snake body 통과 x
+4. wall 통과 x
+5. tick move (비동기,sleep 이용 예정)
+6. 입력된 방향은 입력 다음 틱에 반영
+
+GameOver 추가 retart and quit 기능 추가
