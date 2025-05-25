@@ -1,0 +1,4 @@
+NCurses 사용
+2차원 snake map 구현
+map size minimum(21x21)
+wall n immune wall 구분
