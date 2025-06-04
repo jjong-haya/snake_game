@@ -16,6 +16,8 @@ void GateManager::setUsed(bool u) { used = u; }
 bool GateManager::isExpired() const {
   return (time(nullptr) - spawnTime >= 20);
 }
+void GateManager::setGateA(std::pair<int, int> pos) { gateA = pos; }
+void GateManager::setGateB(std::pair<int, int> pos) { gateB = pos; }
 
 void GateManager::reset() {
   gateA = gateB = {-1, -1};

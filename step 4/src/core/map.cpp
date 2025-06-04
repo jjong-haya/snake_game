@@ -1,16 +1,20 @@
 #include "map.h"
+#include "gate.h"
+#include <cstdlib>
 #include <fstream>
 #include <ncurses.h>
 #include <string>
 #include <unistd.h>
 
 MapManager::MapManager()
-    : stage(0), mapData(MAP_SIZE, std::vector<int>(MAP_SIZE, 0)) {}
+    : stage(0), mapData(MAP_SIZE, std::vector<int>(MAP_SIZE, 0)), wallUp(0),
+      wallDown(0), wallLeft(0), wallRight(0) {}
 
 int MapManager::getStage() const { return stage; }
 void MapManager::setStage(int s) { stage = s; }
 
 void MapManager::load(const std::string &filename) {
+
   std::ifstream file(filename);
   if (!file.is_open()) {
     showMessage("파일 열기 실패: " + filename);
@@ -28,6 +32,7 @@ void MapManager::load(const std::string &filename) {
       mapData[i][j] = num;
     }
   }
+  wallUp = wallDown = wallLeft = wallRight = 0;
 }
 
 void MapManager::print() const {
@@ -184,5 +189,194 @@ void MapManager::printCenteredMessage(const std::string &title,
     nodelay(stdscr, TRUE);
   } else {
     sleep(2);
+  }
+}
+
+#include "gate.h"
+#include "map.h"
+
+void MapManager::WallRandom(GateManager *gateManager) {
+  auto gateA = gateManager->getGateA();
+  auto gateB = gateManager->getGateB();
+  int dir = rand() % 4;
+  int right = MAP_SIZE - wallRight - 1;
+  int down = MAP_SIZE - wallDown - 1;
+
+  //======================== 상 ==========================
+
+  if (dir == 0 && wallUp + wallDown < MAP_SIZE - 8) {
+
+    int y = ++wallUp;
+
+    std::pair<int, int> Lgate(y, wallLeft);
+    std::pair<int, int> Rgate(y, right);
+
+    if (Lgate == gateA) {
+      mapData[y + 1][wallLeft] = 7;
+      gateManager->setGateA({y + 1, wallLeft});
+    } else if (Lgate == gateB) {
+      mapData[y + 1][wallLeft] = 7;
+      gateManager->setGateB({y + 1, wallLeft});
+    }
+
+    if (Rgate == gateA) {
+      mapData[y + 1][right] = 7;
+      gateManager->setGateA({y + 1, right});
+    } else if (Rgate == gateB) {
+      mapData[y + 1][right] = 7;
+      gateManager->setGateB({y + 1, right});
+    }
+
+    for (int x = wallLeft + 1; x < right; ++x) {
+      if (std::make_pair(y - 1, x) == gateA) {
+        mapData[y][x] = 7;
+        gateManager->setGateA({y, x});
+        mapData[y - 1][x] = 2;
+        continue;
+      } else if (std::make_pair(y - 1, x) == gateB) {
+        mapData[y][x] = 7;
+        gateManager->setGateB({y, x});
+        mapData[y - 1][x] = 2;
+        continue;
+      }
+      mapData[y][x] = 1;
+      mapData[y - 1][x] = 2;
+    }
+    mapData[y][wallLeft] = 2;
+    mapData[y][right] = 2;
+  }
+
+  //======================== 하 ==========================
+
+  else if (dir == 1 && wallUp + wallDown < MAP_SIZE - 8) { // 하
+
+    int y = MAP_SIZE - 1 - (++wallDown);
+
+    std::pair<int, int> Lgate(y, wallLeft);
+    std::pair<int, int> Rgate(y, right);
+
+    if (Lgate == gateA) {
+      mapData[y - 1][wallLeft] = 7;
+      gateManager->setGateB({y - 1, wallLeft});
+    } else if (Lgate == gateB) {
+      mapData[y - 1][wallLeft] = 7;
+      gateManager->setGateB({y - 1, wallLeft});
+    }
+
+    if (Rgate == gateA) {
+      mapData[y - 1][right] = 7;
+      gateManager->setGateB({y - 1, right});
+    } else if (Rgate == gateB) {
+      mapData[y - 1][right] = 7;
+      gateManager->setGateB({y - 1, right});
+    }
+
+    for (int x = wallLeft + 1; x < right; ++x) {
+      if (std::make_pair(y + 1, x) == gateA) {
+        mapData[y + 1][x] = 7;
+        gateManager->setGateA({y + 1, x});
+        mapData[y + 1][x] = 2;
+        continue;
+      } else if (std::make_pair(y + 1, x) == gateB) {
+        mapData[y + 1][x] = 7;
+        gateManager->setGateB({y + 1, x});
+        mapData[y + 1][x] = 2;
+        continue;
+      }
+      mapData[y + 1][x] = 2;
+      mapData[y][x] = 1;
+    }
+    mapData[y][wallLeft] = 2;
+    mapData[y][right] = 2;
+
+  }
+
+  //======================== 좌 ==========================
+
+  else if (dir == 2 && wallLeft + wallRight < MAP_SIZE - 8) {
+
+    int x = ++wallLeft;
+
+    std::pair<int, int> Ugate(wallUp, x);
+    std::pair<int, int> Dgate(down, x);
+
+    if (Ugate == gateA) {
+      mapData[wallUp][x + 1] = 7;
+      gateManager->setGateA({wallUp, x + 1});
+    } else if (Ugate == gateB) {
+      mapData[wallUp][x + 1] = 7;
+      gateManager->setGateB({wallUp, x + 1});
+    }
+
+    if (Dgate == gateA) {
+      mapData[wallDown][x + 1] = 7;
+      gateManager->setGateA({wallDown, x + 1});
+    } else if (Dgate == gateB) {
+      mapData[wallDown][x + 1] = 7;
+      gateManager->setGateB({wallDown, x + 1});
+    }
+
+    for (int y = wallUp; y < MAP_SIZE - wallDown; ++y) {
+      if (std::make_pair(y, x - 1) == gateA) {
+        mapData[y][x] = 7;
+        gateManager->setGateA({y, x});
+        mapData[y][x - 1] = 2;
+        continue;
+      } else if (std::make_pair(y, x - 1) == gateB) {
+        mapData[y][x] = 7;
+        gateManager->setGateB({y, x});
+        mapData[y][x - 1] = 2;
+        continue;
+      }
+      mapData[y][x - 1] = 2;
+      mapData[y][x] = 1;
+    }
+    mapData[wallUp][x] = 2;
+    mapData[MAP_SIZE - wallDown - 1][x] = 2;
+
+  }
+
+  //======================== 우 ==========================
+
+  else if (dir == 3 && wallLeft + wallRight < MAP_SIZE - 8) {
+    int x = MAP_SIZE - 1 - (++wallRight);
+
+    std::pair<int, int> Ugate(wallUp, x);
+    std::pair<int, int> Dgate(down, x);
+
+    if (Ugate == gateA) {
+      mapData[wallUp][x - 1] = 7;
+      gateManager->setGateA({wallUp, x - 1});
+    } else if (Ugate == gateB) {
+      mapData[wallUp][x - 1] = 7;
+      gateManager->setGateB({wallUp, x - 1});
+    }
+
+    if (Dgate == gateA) {
+      mapData[wallDown][x - 1] = 7;
+      gateManager->setGateA({wallDown, x - 1});
+    } else if (Dgate == gateB) {
+      mapData[wallDown][x - 1] = 7;
+      gateManager->setGateB({wallDown, x - 1});
+    }
+
+    for (int y = wallUp; y < MAP_SIZE - wallDown; ++y) {
+
+      if (std::make_pair(y, x + 1) == gateA) {
+        mapData[y][x] = 7;
+        gateManager->setGateA({y, x});
+        mapData[y][x + 1] = 2;
+        continue;
+      } else if (std::make_pair(y, x + 1) == gateB) {
+        mapData[y][x] = 7;
+        gateManager->setGateB({y, x});
+        mapData[y][x + 1] = 2;
+        continue;
+      }
+      mapData[y][x] = 1;
+      mapData[y][x + 1] = 2;
+    }
+    mapData[wallUp][x] = 2;
+    mapData[MAP_SIZE - wallDown - 1][x] = 2;
   }
 }

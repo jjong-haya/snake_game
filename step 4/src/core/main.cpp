@@ -45,37 +45,58 @@ int main() {
   GateManager gate;
 
   map.printIntro();
+  static auto lastMove = std::chrono::steady_clock::now();
+  static auto lastShrink = std::chrono::steady_clock::now();
 
   for (size_t stage = 0; stage < Maps.size(); stage++) {
     clear();
     map.load(Maps[stage]);
     map.setStage(stage + 1);
+
     gate.setMap(&map);
     gate.setMaxGates(1);
+    gate.reset();
+
     snake.reset();
     snake.setMap(&map);
     snake.setGateManager(&gate);
+
     item.setMap(&map);
     item.setSnake(&snake);
+    item.reset();
+
     map.printStageIntro();
+
+    lastMove = std::chrono::steady_clock::now();
+    lastShrink = std::chrono::steady_clock::now();
 
     while (true) {
       snake.handleInput();
 
-      static auto lastMove = std::chrono::steady_clock::now();
       auto now = std::chrono::steady_clock::now();
       std::chrono::duration<double> elapsed = now - lastMove;
+      auto Wallnow = std::chrono::steady_clock::now();
+      std::chrono::duration<double> shrinkElapsed = Wallnow - lastShrink;
 
-      if (elapsed.count() >= snake.getSpeedDelay() + 1) {
+      if (shrinkElapsed.count() >= 30.0 && !gate.isActive()) {
+        lastShrink = Wallnow;
+        map.WallRandom(&gate);
+        clear();
+        map.print();
+        snake.render();
+        refresh();
+      }
+
+      if (elapsed.count() >= snake.getSpeedDelay()) {
         lastMove = now;
-
         clear();
         item.spawn(map.getStage());
         item.removeItem();
         if (!gate.isActive())
           gate.spawn();
-        if ((gate.isUsed() || gate.isExpired()) && gate.isActive())
+        if ((gate.isUsed() || gate.isExpired()) && !gate.isActive())
           gate.clear();
+
         if (!snake.move() || !item.getItem(snake)) {
           if (!map.printGameOver()) {
             endwin();

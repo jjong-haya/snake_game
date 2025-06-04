@@ -19,6 +19,8 @@ public:
   GateManager();
   std::pair<int, int> getGateA() const { return gateA; }
   std::pair<int, int> getGateB() const { return gateB; }
+  void setGateA(std::pair<int, int> pos);
+  void setGateB(std::pair<int, int> pos);
   void setMap(MapManager *m);
   void setMaxGates(int count);
   void spawn();
