@@ -29,6 +29,7 @@
 보고서 참고 
 
 - 시연영상
+- https://www.youtube.com/watch?v=_26iktMyZ5g
 
 
 ## 실행
